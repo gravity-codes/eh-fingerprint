@@ -1,39 +1,43 @@
 local inFingerPrintZone = false
-exports['rz-polyzone']:AddBoxZone("fingerprint_area", vector3(474.02, -1013.33, 26.27), 4.5, 4.5, {
-    heading = 175.37,
+
+local fingerPrintZone = BoxZone:Create(vector3(474.02, -1013.33, 26.27), 4.5, 4.5, {
+    name = "fingerprint_area",
+    offset = { 0.0, 0.0, 0.0 },
+    scale = { 1.0, 1.0, 1.0 },
     debugPoly = false,
-    minZ = 25,
-    maxZ = 28
 })
 
-RegisterNetEvent("rz-polyzone:enter", function(zone)
-    if zone == 'fingerprint_area' then
+fingerPrintZone:onPointInOut(PolyZone.getPlayerPosition, function(isPointInside, point)
+    if isPointInside then
+        -- Point has just entered the zone
         inFingerPrintZone = true
-    end
-end)
-
-RegisterNetEvent("rz-polyzone:exit", function(zone)
-    if zone == 'fingerprint_area' then
+    else
+        -- Point has just left the zone
         inFingerPrintZone = false
     end
 end)
 
-exports['rz-polytarget']:AddBoxZone("fingerprint_machine", vector3(487.29, -993.99, 30.69), 0.6, 0.6, {
-    name = "fingerprint_machine",
-    heading = 358,
-    minZ = 30.69,
-    maxZ = 31.1,
-    debugPoly = false,
+exports['qb-target']:AddBoxZone("fingerprint_machine", vector3(487.29, -993.99, 30.69), 0.6, 0.6,
+    {
+        name = "fingerprint_machine",
+        heading = 358.0,
+        debugPoly = false,
+        minZ = 30.69,
+        maxZ = 31.1,
+    }, {
+    options = {
+        {
+            type = "client",
+            event = "eh-police:runprints",
+            icon = 'fa-solid fa-fingerprint',
+            label = 'Run fingerprint card',
+            targeticon = 'fas fa-example',
+        }
+    },
+    distance = 2.0,
 })
 
-exports['rz-interact']:AddPeekEntryByPolyTarget('fingerprint_machine', {{
-    event = "rz-police:runprints",
-    id = "runfingerprints",
-    icon = "fingerprint",
-    label = "Run fingerprint card",
-}}, {distance = {radius = 2.0}})
-
-RegisterNetEvent('rz-police:fingerprint', function()
+RegisterNetEvent('eh-police:fingerprint', function()
     if not IsCop() then
         TriggerEvent("ShortText", "Must be a Cop to do this.", 3)
         return
@@ -52,7 +56,7 @@ RegisterNetEvent('rz-police:fingerprint', function()
         local finished = exports['rz-taskbar']:TaskBar("Brushing fingerprints", 15000, true)
         if finished == 100 then
             ClearPedTasks(PlayerPedId())
-            exports["rz-inventory"]:AddItem("fingerprint_card", 1, {CardNumber = serverId})
+            exports["rz-inventory"]:AddItem("fingerprint_card", 1, { CardNumber = serverId })
         end
     else
         TriggerEvent("ShortText", "No one is near you", 3)
@@ -60,7 +64,7 @@ RegisterNetEvent('rz-police:fingerprint', function()
     end
 end)
 
-RegisterNetEvent('rz-police:runprints', function()
+RegisterNetEvent('eh-police:runprints', function()
     local cardData = exports['rz-inventory']:GetItemAmount('fingerprint_card')
     if cardData > 1 then
         TriggerEvent('LongText', 'You can only run one fingerprint card through the machine at a time.', 3)
@@ -75,8 +79,8 @@ RegisterNetEvent('rz-police:runprints', function()
     local targetcid = RPC.Execute("base:getOthersCid", targetid)
     if targetcid then
         local char = RPC.Execute("base:getActiveCharacterWithCid", targetcid)
-        TriggerEvent("chatMessage", "Fingerprints", 2, 'Those prints came back a match to: ' .. char.first_name .. ' ' .. char.last_name .. '.')
-
+        TriggerEvent("chatMessage", "Fingerprints", 2,
+            'Those prints came back a match to: ' .. char.first_name .. ' ' .. char.last_name .. '.')
     else
         TriggerEvent("chatMessage", "Fingerprints", 3, 'An error occured with the machine.')
     end
